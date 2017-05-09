@@ -18,7 +18,7 @@ namespace update
     static EUpdateMode UpdateMode = EUpdateMode.update;
     static ulong totalFiles = 0;
     static ulong totalBytes = 0;
-
+    static bool diff = false;
 
     static void Main(string[] args)
     {
@@ -38,9 +38,13 @@ namespace update
         }
         else
         {
-          Console.WriteLine($"Possible Arguments:\n{EUpdateMode.update},{EUpdateMode.revert},{EUpdateMode.no_new_files}\n");
+          Console.WriteLine($"Possible Arguments:\nupdate ({EUpdateMode.update},{EUpdateMode.revert},{EUpdateMode.no_new_files}) (diff)\n");
           return;
         }
+
+        if (args.Length > 1)
+          if (args[1] == nameof(diff))
+            diff = true;
       }
 
       try
@@ -175,7 +179,9 @@ namespace update
       {
         if (!updateFiles.Contains(file) && !file.EndsWith(".update"))
         {
-          File.Delete(CurrentDirectory + file);
+          if(!diff)
+            File.Delete(CurrentDirectory + file);
+
           Console.WriteLine($"Deleted {file}.");
         }
       }
@@ -215,7 +221,8 @@ namespace update
 
               if (!Directory.Exists(dir))
               {
-                Directory.CreateDirectory(dir);
+                if (!diff)
+                  Directory.CreateDirectory(dir);
               }
               else
               {
@@ -224,8 +231,14 @@ namespace update
             }
           }
 
-          File.Delete(CurrentDirectory + file);
-          File.Copy(updateDirectory + file, CurrentDirectory + file);
+          if (file.EndsWith(".update"))
+            continue;
+
+          if (!diff)
+          {
+            File.Delete(CurrentDirectory + file);
+            File.Copy(updateDirectory + file, CurrentDirectory + file);
+          }
 
           totalFiles++;
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
@@ -276,7 +289,8 @@ namespace update
 
               if (!Directory.Exists(dir))
               {
-                Directory.CreateDirectory(dir);
+                if (!diff)
+                  Directory.CreateDirectory(dir);
               }
               else
               {
@@ -285,8 +299,14 @@ namespace update
             }
           }
 
-          File.Delete(CurrentDirectory + file);
-          File.Copy(updateDirectory + file, CurrentDirectory + file);
+          if (file.EndsWith(".update"))
+            continue;
+
+          if (!diff)
+          {
+            File.Delete(CurrentDirectory + file);
+            File.Copy(updateDirectory + file, CurrentDirectory + file);
+          }
 
           totalFiles++;
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
@@ -342,7 +362,8 @@ namespace update
 
               if (!Directory.Exists(dir))
               {
-                Directory.CreateDirectory(dir);
+                if (!diff)
+                  Directory.CreateDirectory(dir);
               }
               else
               {
@@ -351,8 +372,14 @@ namespace update
             }
           }
 
-          File.Delete(CurrentDirectory + file);
-          File.Copy(updateDirectory + file, CurrentDirectory + file);
+          if (file.EndsWith(".update"))
+            continue;
+
+          if (!diff)
+          {
+            File.Delete(CurrentDirectory + file);
+            File.Copy(updateDirectory + file, CurrentDirectory + file);
+          }
 
           totalFiles++;
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
