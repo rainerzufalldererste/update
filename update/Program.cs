@@ -12,7 +12,7 @@ namespace update
     static string ToPath(this string path)
     {
       if (path.Contains('\\'))
-        path = CurrentDirectory.Replace('\\', '/');
+        path = path.Replace('\\', '/');
 
       if (!path.EndsWith("/"))
         path += "/";
@@ -123,7 +123,7 @@ namespace update
         {
           if(args.Length > 2)
           {
-            string arg_ = args[2].ToLower().ToPath();
+            string arg_ = args[2].ToLower();
             
             if (arg_ == EUpdateMode.update.ToString())
             {
