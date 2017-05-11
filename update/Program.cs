@@ -27,7 +27,7 @@ namespace update
 
     enum OtherArgs
     {
-      init, info, change, copy
+      init, status, change, copy
     }
 
     static string CurrentDirectory = null;
@@ -36,10 +36,10 @@ namespace update
     static ulong totalBytes = 0;
     static bool diff = false;
 
-    
+
     static void Main(string[] args)
     {
-      if(args.Length != 0)
+      if (args.Length != 0)
       {
         string arg = args[0].ToLower();
 
@@ -55,18 +55,30 @@ namespace update
         {
           UpdateMode = EUpdateMode.no_new_files;
         }
-        else if(arg == OtherArgs.info.ToString())
+        else if (arg == OtherArgs.status.ToString())
         {
           string currentDirectory = FindDirectoryUpwards(Environment.CurrentDirectory);
 
-          if(currentDirectory == null)
+          if (currentDirectory == null)
           {
             Console.WriteLine("No .update file found.");
             Environment.Exit(-20);
           }
           else
           {
-            Console.WriteLine($"The current directory is {currentDirectory}.");
+            Console.WriteLine($"The current .update file directory is {currentDirectory}.");
+
+            string[] contents = ReadUpdateFile(currentDirectory);
+
+            if(contents.Length > 0)
+            {
+              Console.WriteLine($"The directory to update from is {contents[0]}.");
+            }
+            else
+            {
+              Console.WriteLine($"The .update file is invalid and contains no data.\nAborting.");
+              Environment.Exit(-22);
+            }
           }
           return;
         }
@@ -121,10 +133,10 @@ namespace update
         }
         else if (arg == OtherArgs.copy.ToString())
         {
-          if(args.Length > 2)
+          if (args.Length > 2)
           {
             string arg_ = args[2].ToLower();
-            
+
             if (arg_ == EUpdateMode.update.ToString())
             {
               UpdateMode = EUpdateMode.update;
@@ -153,7 +165,7 @@ namespace update
         }
         else
         {
-          Console.WriteLine($"Possible Arguments:\nupdate ({EUpdateMode.update},{EUpdateMode.revert},{EUpdateMode.no_new_files}) (diff)\nupdate {OtherArgs.init} <path>\nupdate {OtherArgs.change} <path>\nupdate {OtherArgs.copy} <source path>\nupdate {OtherArgs.info}");
+          Console.WriteLine($"Possible Arguments:\nupdate ({EUpdateMode.update},{EUpdateMode.revert},{EUpdateMode.no_new_files}) (diff)\nupdate {OtherArgs.init} <path>\nupdate {OtherArgs.change} <path>\nupdate {OtherArgs.copy} <source path>\nupdate {OtherArgs.status}");
           return;
         }
 
@@ -299,8 +311,10 @@ namespace update
       {
         if (!updateFiles.Contains(file) && !file.EndsWith(".update"))
         {
-          if(!diff)
-            File.Delete(CurrentDirectory + file);
+          bool deleted = true;
+
+          if (!diff)
+            deleted = DeleteFileIfExists(CurrentDirectory + file);
 
           Console.WriteLine($"Deleted {file}.");
         }
@@ -317,52 +331,34 @@ namespace update
           try
           {
             current = new FileInfo(CurrentDirectory + file);
-            update =  new FileInfo(updateDirectory + file);
+            update = new FileInfo(updateDirectory + file);
 
             if (current.LastWriteTime.Equals(update.LastWriteTime) && current.Length == update.Length)
               continue;
           }
-          catch
+          catch (Exception e)
           {
-            Console.WriteLine($"Failed read on file {file}.");
+            Console.WriteLine($"Failed read on file {file}. ({e.Message})");
           }
         }
 
         try
         {
-          // get directory
-          string dir = CurrentDirectory + file;
-
-          for (int i = dir.Length - 2; i >= 0; i--)
-          {
-            if (dir[i] == '/')
-            {
-              dir = dir.Remove(i + 1);
-
-              if (!Directory.Exists(dir))
-              {
-                if (!diff)
-                  Directory.CreateDirectory(dir);
-              }
-              else
-              {
-                break;
-              }
-            }
-          }
-
           if (file.EndsWith(".update"))
             continue;
 
+          bool deleted = false;
+
           if (!diff)
-          {
-            File.Delete(CurrentDirectory + file);
-            File.Copy(updateDirectory + file, CurrentDirectory + file);
-          }
+            deleted = CopyFile(updateDirectory + file, CurrentDirectory + file);
 
           totalFiles++;
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
-          Console.WriteLine($"Updated {file}.");
+
+          if (deleted)
+            Console.WriteLine($"Updated {file}.");
+          else
+            Console.WriteLine($"Created {file}.");
         }
         catch (Exception e)
         {
@@ -390,47 +386,29 @@ namespace update
             if (current.LastWriteTime > update.LastWriteTime)
               continue;
           }
-          catch
+          catch (Exception e)
           {
-            Console.WriteLine($"Failed read on file {file}.");
+            Console.WriteLine($"Failed read on file {file}. ({e.Message})");
           }
         }
 
         try
         {
-          // get directory
-          string dir = CurrentDirectory + file;
-
-          for (int i = dir.Length - 2; i >= 0; i--)
-          {
-            if (dir[i] == '/')
-            {
-              dir = dir.Remove(i + 1);
-
-              if (!Directory.Exists(dir))
-              {
-                if (!diff)
-                  Directory.CreateDirectory(dir);
-              }
-              else
-              {
-                break;
-              }
-            }
-          }
-
           if (file.EndsWith(".update"))
             continue;
 
+          bool deleted = false;
+
           if (!diff)
-          {
-            File.Delete(CurrentDirectory + file);
-            File.Copy(updateDirectory + file, CurrentDirectory + file);
-          }
+            deleted = CopyFile(updateDirectory + file, CurrentDirectory + file);
 
           totalFiles++;
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
-          Console.WriteLine($"Updated {file}.");
+
+          if (deleted)
+            Console.WriteLine($"Updated {file}.");
+          else
+            Console.WriteLine($"Created {file}.");
         }
         catch (Exception e)
         {
@@ -459,9 +437,9 @@ namespace update
             if (current.LastWriteTime > update.LastWriteTime)
               continue;
           }
-          catch
+          catch (Exception e)
           {
-            Console.WriteLine($"Failed read on file {file}.");
+            Console.WriteLine($"Failed read on file {file}. ({e.Message})");
           }
         }
         else
@@ -471,39 +449,20 @@ namespace update
 
         try
         {
-          // get directory
-          string dir = CurrentDirectory + file;
-
-          for (int i = dir.Length - 2; i >= 0; i--)
-          {
-            if (dir[i] == '/')
-            {
-              dir = dir.Remove(i + 1);
-
-              if (!Directory.Exists(dir))
-              {
-                if (!diff)
-                  Directory.CreateDirectory(dir);
-              }
-              else
-              {
-                break;
-              }
-            }
-          }
-
           if (file.EndsWith(".update"))
             continue;
+          bool deleted = false;
 
           if (!diff)
-          {
-            File.Delete(CurrentDirectory + file);
-            File.Copy(updateDirectory + file, CurrentDirectory + file);
-          }
+            deleted = CopyFile(updateDirectory + file, CurrentDirectory + file);
 
           totalFiles++;
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
-          Console.WriteLine($"Updated {file}.");
+
+          if (deleted)
+            Console.WriteLine($"Updated {file}.");
+          else
+            Console.WriteLine($"Created {file}.");
         }
         catch (Exception e)
         {
@@ -567,6 +526,67 @@ namespace update
       }
 
       return null;
+    }
+
+    private static bool DeleteFileIfExists(string path)
+    {
+      try
+      {
+        if (File.Exists(path))
+        {
+          File.Delete(path);
+          return true;
+        }
+
+        return false;
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine($"Failed to remove file {path}. ({e.Message})");
+        return false;
+      }
+    }
+
+    private static bool CopyFile(string sourcePath, string destinationPath)
+    {
+      try
+      {
+        string dir = destinationPath;
+
+        for (int i = dir.Length - 2; i >= 0; i--)
+        {
+          if (dir[i] == '/')
+          {
+            dir = dir.Remove(i + 1);
+
+            if (!Directory.Exists(dir))
+            {
+              if (!diff)
+                Directory.CreateDirectory(dir);
+            }
+
+            break;
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine($"Failed to create directory for {destinationPath}. ({e.Message})");
+      }
+
+      bool ret = DeleteFileIfExists(destinationPath);
+
+      try
+      {
+        File.Copy(sourcePath, destinationPath);
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine($"Failed to write file {sourcePath}. ({e.Message})");
+        ret = false;
+      }
+
+      return ret;
     }
   }
 }
