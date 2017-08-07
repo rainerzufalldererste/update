@@ -174,8 +174,6 @@ namespace update
             diff = true;
       }
 
-      BEGIN:
-
       try
       {
         CurrentDirectory = FindDirectoryUpwards(Environment.CurrentDirectory);
@@ -264,12 +262,13 @@ namespace update
           break;
 
         default:
-          Console.WriteLine("Invalid EUpdateMode.\nAborting.");
+          Console.WriteLine("Invalid UpdateMode.\nAborting.");
           Environment.Exit(-10);
           return;
       }
 
-      ClearWrite($"Done.\nUpdated {totalFiles} Files ({totalBytes} Bytes).");
+      ClearWrite("Done.");
+      ClearWrite($"Updated {totalFiles} Files ({totalBytes} Bytes).");
     }
 
 
@@ -316,7 +315,7 @@ namespace update
           if (!diff)
             deleted = DeleteFileIfExists(CurrentDirectory + file);
 
-          Console.Write($"\rDeleted {file}.\n");
+          ClearWrite($"Deleted {file}.");
         }
       }
 
@@ -324,11 +323,11 @@ namespace update
 
       int count = updateFiles.Length;
       int index = 0;
-      const int progressBarSteps = 50;
+      const int progressBarSteps = 110;
 
       foreach (string file in updateFiles)
       {
-        Console.Write("\r" + new string(':', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('.', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
+        Console.Write("\r" + new string('▓', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('▒', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
         index++;
 
         if (currentFiles.Contains(file))
@@ -345,7 +344,7 @@ namespace update
           }
           catch (Exception e)
           {
-            ClearWrite($"Failed read on file {file}. ({e.Message})\n");
+            ClearWrite($"Failed read on file {file}. ({e.Message})");
           }
         }
 
@@ -363,13 +362,13 @@ namespace update
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
 
           if (deleted)
-            ClearWrite($"Updated {file}.\n");
+            ClearWrite($"Updated {file}.");
           else
-            ClearWrite($"Created {file}.\n");
+            ClearWrite($"Created {file}.");
         }
         catch (Exception e)
         {
-          ClearWrite($"Failed to update {file}! ({e.Message})\n");
+          ClearWrite($"Failed to update {file}! ({e.Message})");
         }
       }
     }
@@ -378,11 +377,11 @@ namespace update
     {
       int count = updateFiles.Length;
       int index = 0;
-      const int progressBarSteps = 50;
+      const int progressBarSteps = 110;
 
       foreach (string file in updateFiles)
       {
-        Console.Write("\r" + new string(':', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('.', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
+        Console.Write("\r" + new string('▓', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('▒', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
         index++;
 
         if (currentFiles.Contains(file))
@@ -402,7 +401,7 @@ namespace update
           }
           catch (Exception e)
           {
-            ClearWrite($"Failed read on file {file}. ({e.Message})\n");
+            ClearWrite($"Failed read on file {file}. ({e.Message})");
           }
         }
 
@@ -420,13 +419,13 @@ namespace update
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
 
           if (deleted)
-            ClearWrite($"Updated {file}.\n");
+            ClearWrite($"Updated {file}.");
           else
-            ClearWrite($"Created {file}.\n");
+            ClearWrite($"Created {file}.");
         }
         catch (Exception e)
         {
-          ClearWrite($"Failed to update {file}! ({e.Message})\n");
+          ClearWrite($"Failed to update {file}! ({e.Message})");
         }
       }
     }
@@ -436,11 +435,11 @@ namespace update
     {
       int count = updateFiles.Length;
       int index = 0;
-      const int progressBarSteps = 50;
+      const int progressBarSteps = 110;
 
       foreach (string file in updateFiles)
       {
-        Console.Write("\r" + new string(':', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('.', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
+        Console.Write("\r" + new string('▓', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('▒', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
         index++;
 
         if (currentFiles.Contains(file))
@@ -460,7 +459,7 @@ namespace update
           }
           catch (Exception e)
           {
-            ClearWrite($"Failed read on file {file}. ({e.Message})\n");
+            ClearWrite($"Failed read on file {file}. ({e.Message})");
           }
         }
         else
@@ -481,13 +480,13 @@ namespace update
           totalBytes += (ulong)new FileInfo(updateDirectory + file).Length;
 
           if (deleted)
-            ClearWrite($"Updated {file}.\n");
+            ClearWrite($"Updated {file}.");
           else
-            ClearWrite($"Created {file}.\n");
+            ClearWrite($"Created {file}.");
         }
         catch (Exception e)
         {
-          ClearWrite($"Failed to update {file}! ({e.Message})\n");
+          ClearWrite($"Failed to update {file}! ({e.Message})");
         }
       }
     }
@@ -563,7 +562,7 @@ namespace update
       }
       catch (Exception e)
       {
-        Console.WriteLine($"Failed to remove file {path}. ({e.Message})");
+        ClearWrite($"Failed to remove file {path}. ({e.Message})");
         return false;
       }
     }
@@ -592,7 +591,7 @@ namespace update
       }
       catch (Exception e)
       {
-        Console.WriteLine($"Failed to create directory for {destinationPath}. ({e.Message})");
+        ClearWrite($"Failed to create directory for {destinationPath}. ({e.Message})");
       }
 
       bool ret = DeleteFileIfExists(destinationPath);
@@ -603,7 +602,7 @@ namespace update
       }
       catch (Exception e)
       {
-        Console.WriteLine($"Failed to write file {sourcePath}. ({e.Message})");
+        ClearWrite($"Failed to write file {sourcePath}. ({e.Message})");
         ret = false;
       }
 
@@ -612,8 +611,7 @@ namespace update
 
     public static void ClearWrite(string s)
     {
-      Console.Write("\r" + new string(' ', Console.WindowWidth));
-      Console.Write("\r" + s + "\r");
+      Console.Write("\r" + s + new string(' ', Console.WindowWidth - 1 - (s.Length % Console.WindowWidth)) + "\n");
     }
   }
 }
