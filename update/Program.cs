@@ -283,7 +283,19 @@ namespace update
       }
 
       ClearWrite("Done.");
-      ClearWrite($"Updated {totalFiles} Files ({totalBytes} Bytes).");
+
+      byte unitIndex = 0;
+      double bytesRelativeToUnit = totalBytes;
+
+      while(bytesRelativeToUnit > 1024.0 && unitIndex < 8)
+      {
+        unitIndex++;
+        bytesRelativeToUnit /= 1024;
+      }
+
+      string[] units = { "Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB" };
+
+      ClearWrite($"Updated {totalFiles} Files ({bytesRelativeToUnit.ToString("0.00")} {units[unitIndex]}).");
     }
 
 
@@ -339,7 +351,7 @@ namespace update
 
       int count = updateFiles.Length;
       int index = 0;
-      const int progressBarSteps = 90;
+      int progressBarSteps = Console.BufferWidth - 1;
 
       foreach (string file in updateFiles)
       {
@@ -396,7 +408,7 @@ namespace update
     {
       int count = updateFiles.Length;
       int index = 0;
-      const int progressBarSteps = 90;
+      int progressBarSteps = Console.BufferWidth - 1;
 
       foreach (string file in updateFiles)
       {
@@ -457,7 +469,7 @@ namespace update
     {
       int count = updateFiles.Length;
       int index = 0;
-      const int progressBarSteps = 90;
+      int progressBarSteps = Console.BufferWidth - 1;
 
       foreach (string file in updateFiles)
       {
