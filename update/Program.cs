@@ -353,13 +353,23 @@ namespace update
       int count = updateFiles.Length;
       int index = 0;
       int progressBarSteps = Console.BufferWidth - 1;
-      TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
-      TaskbarManager.Instance.SetProgressValue(index, count);
+
+      bool taskbarFailed = false;
+
+      try
+      {
+        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+        TaskbarManager.Instance.SetProgressValue(index, count);
+      }
+      catch { taskbarFailed = true; }
 
       foreach (string file in updateFiles)
       {
         Console.Write("\r" + new string('▓', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('▒', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
-        TaskbarManager.Instance.SetProgressValue(index, count);
+
+        if (!taskbarFailed)
+          TaskbarManager.Instance.SetProgressValue(index, count);
+
         index++;
 
         if (currentFiles.Contains(file))
@@ -407,7 +417,8 @@ namespace update
         }
       }
 
-      TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+      if (!taskbarFailed)
+        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
     }
 
     private static void UpdateUpdate(string[] updateFiles, ref List<string> currentFiles, string updateDirectory)
@@ -415,13 +426,23 @@ namespace update
       int count = updateFiles.Length;
       int index = 0;
       int progressBarSteps = Console.BufferWidth - 1;
-      TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
-      TaskbarManager.Instance.SetProgressValue(index, count);
+
+      bool taskbarFailed = false;
+
+      try
+      {
+        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+        TaskbarManager.Instance.SetProgressValue(index, count);
+      }
+      catch { taskbarFailed = true; }
 
       foreach (string file in updateFiles)
       {
         Console.Write("\r" + new string('▓', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('▒', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
-        TaskbarManager.Instance.SetProgressValue(index, count);
+
+        if (!taskbarFailed)
+          TaskbarManager.Instance.SetProgressValue(index, count);
+
         index++;
 
         if (currentFiles.Contains(file))
@@ -472,7 +493,8 @@ namespace update
         }
       }
 
-      TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+      if (!taskbarFailed)
+        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
     }
 
 
@@ -481,13 +503,23 @@ namespace update
       int count = updateFiles.Length;
       int index = 0;
       int progressBarSteps = Console.BufferWidth - 1;
-      TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
-      TaskbarManager.Instance.SetProgressValue(index, count);
+
+      bool taskbarFailed = false;
+
+      try
+      {
+        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+        TaskbarManager.Instance.SetProgressValue(index, count);
+      }
+      catch { taskbarFailed = true; }
 
       foreach (string file in updateFiles)
       {
         Console.Write("\r" + new string('▓', (int)(((float)index / (float)count) * (float)(progressBarSteps))) + new string('▒', (int)(((float)(count - index) / (float)count) * (float)(progressBarSteps))));
-        TaskbarManager.Instance.SetProgressValue(index, count);
+
+        if(!taskbarFailed)
+          TaskbarManager.Instance.SetProgressValue(index, count);
+
         index++;
 
         if (currentFiles.Contains(file))
@@ -541,7 +573,8 @@ namespace update
         }
       }
 
-      TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+      if (!taskbarFailed)
+        TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
     }
 
 
