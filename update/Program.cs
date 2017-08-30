@@ -26,7 +26,7 @@ namespace update
       update, revert, no_new_files
     }
 
-    enum OtherArgs
+    enum EOtherArgs
     {
       init, status, change, copy
     }
@@ -37,7 +37,8 @@ namespace update
     static ulong totalBytes = 0;
     static bool diff = false;
     static bool verbose = false;
-
+    static bool subdir = false;
+    static bool porcelain = false;
 
     static void Main(string[] args)
     {
@@ -57,7 +58,7 @@ namespace update
         {
           UpdateMode = EUpdateMode.no_new_files;
         }
-        else if (arg == OtherArgs.status.ToString())
+        else if (arg == EOtherArgs.status.ToString())
         {
           string currentDirectory = FindDirectoryUpwards(Environment.CurrentDirectory);
 
@@ -84,7 +85,7 @@ namespace update
           }
           return;
         }
-        else if (arg == OtherArgs.change.ToString())
+        else if (arg == EOtherArgs.change.ToString())
         {
           string directory;
 
@@ -108,7 +109,7 @@ namespace update
 
           return;
         }
-        else if (arg == OtherArgs.init.ToString())
+        else if (arg == EOtherArgs.init.ToString())
         {
           string directory;
 
@@ -133,7 +134,7 @@ namespace update
 
           return;
         }
-        else if (arg == OtherArgs.copy.ToString())
+        else if (arg == EOtherArgs.copy.ToString())
         {
           if (args.Length > 2)
           {
@@ -167,25 +168,36 @@ namespace update
         }
         else
         {
-          Console.WriteLine($"Possible Arguments:\nupdate ({EUpdateMode.update},{EUpdateMode.revert},{EUpdateMode.no_new_files}) (diff, verbose)\nupdate {OtherArgs.init} <path>\nupdate {OtherArgs.change} <path>\nupdate {OtherArgs.copy} <source path>\nupdate {OtherArgs.status}");
+          Console.WriteLine($"Possible Arguments:\nupdate ({EUpdateMode.update} | {EUpdateMode.revert} | {EUpdateMode.no_new_files}) ({nameof(diff)}, {nameof(verbose)}, {nameof(subdir)}, {nameof(porcelain)})\nupdate {EOtherArgs.init} <path>\nupdate {EOtherArgs.change} <path>\nupdate {EOtherArgs.copy} <source path>\nupdate {EOtherArgs.status}");
           return;
         }
 
         if (args.Length > 1)
         {
-          if (args[1] == nameof(diff))
+          for (int i = 1; i < args.Length; i++)
           {
-            diff = true;
-            verbose = true;
-          }
-          else if (args[1] == nameof(verbose))
-          {
-            verbose = true;
-          }
-          else
-          {
-            Console.WriteLine($"Invalid Parameter {args[1]}.\nAborting.");
-            Environment.Exit(-100);
+            if (args[i] == nameof(diff))
+            {
+              diff = true;
+              verbose = true;
+            }
+            else if (args[i] == nameof(verbose))
+            {
+              verbose = true;
+            }
+            else if (args[i] == nameof(subdir))
+            {
+              subdir = true;
+            }
+            else if (args[i] == nameof(porcelain))
+            {
+              porcelain = true;
+            }
+            else
+            {
+              Console.WriteLine($"Invalid Parameter {args[i]}.\nAborting.");
+              Environment.Exit(-100);
+            }
           }
         }
       }
@@ -225,6 +237,21 @@ namespace update
     {
       updateDirectory = updateDirectory.ToPath();
       currentDirectory = currentDirectory.ToPath();
+
+      if(subdir)
+      {
+        string subPath = Environment.CurrentDirectory.ToPath().Substring(currentDirectory.Length);
+        updateDirectory += subPath;
+
+        if(!Directory.Exists(updateDirectory))
+        {
+          Console.WriteLine($"Subpath '{subPath}' does not exist in the update directory.\nAborting.");
+          Environment.Exit(-100);
+        }
+
+        currentDirectory += subPath;
+        System.Diagnostics.Debug.Assert(currentDirectory == Environment.CurrentDirectory.ToPath(), "The new update path should be equal to the WorkingDirectory.");
+      }
 
       string[] updateFiles;
       List<string> currentFiles;
@@ -324,7 +351,7 @@ namespace update
 
       if (!Directory.Exists(ret[0]))
       {
-        Console.WriteLine($"An error occured when reading the .update file:\nThe given directory does not exist or is not accessable.\n\nAborting.");
+        Console.WriteLine($"An error occured when reading the .update file:\nThe given directory '{ret[0]}' does not exist or is not accessable.\n\nAborting.");
         Environment.Exit(-6);
         throw new Exception(); // just for compiler errors ;)
       }
@@ -334,8 +361,13 @@ namespace update
 
     private static void UpdateRevert(string[] updateFiles, ref List<string> currentFiles, string updateDirectory)
     {
+      int count = currentFiles.Count;
+      int index = 0;
+
       foreach (string file in currentFiles)
       {
+        Console.Write("\rDeleting... (" + ((index / (float)count) * 100f).ToString("0.00") + "%)");
+
         if (!updateFiles.Contains(file) && !file.EndsWith(".update"))
         {
           bool deleted = true;
@@ -346,12 +378,14 @@ namespace update
           if (verbose)
             ClearWrite($"Deleted {file}.", ConsoleColor.Red);
         }
+
+        index++;
       }
 
       FileInfo current, update = null;
 
-      int count = updateFiles.Length;
-      int index = 0;
+      count = updateFiles.Length;
+      index = 0;
       int progressBarSteps = Console.BufferWidth - 1;
 
       bool taskbarFailed = false;
@@ -387,6 +421,9 @@ namespace update
           catch (Exception e)
           {
             ClearWrite($"Failed read on file {file}. ({e.Message})", ConsoleColor.DarkRed);
+
+            if (porcelain)
+              Environment.Exit(-101);
           }
         }
 
@@ -414,6 +451,9 @@ namespace update
         catch (Exception e)
         {
           ClearWrite($"Failed to update {file}! ({e.Message})", ConsoleColor.DarkRed);
+
+          if (porcelain)
+            Environment.Exit(-101);
         }
       }
 
@@ -463,6 +503,9 @@ namespace update
           catch (Exception e)
           {
             ClearWrite($"Failed read on file {file}. ({e.Message})", ConsoleColor.DarkRed);
+
+            if (porcelain)
+              Environment.Exit(-101);
           }
         }
 
@@ -490,6 +533,9 @@ namespace update
         catch (Exception e)
         {
           ClearWrite($"Failed to update {file}! ({e.Message})", ConsoleColor.DarkRed);
+
+          if (porcelain)
+            Environment.Exit(-101);
         }
       }
 
@@ -540,6 +586,9 @@ namespace update
           catch (Exception e)
           {
             ClearWrite($"Failed read on file {file}. ({e.Message})", ConsoleColor.DarkRed);
+
+            if (porcelain)
+              Environment.Exit(-101);
           }
         }
         else
@@ -570,6 +619,9 @@ namespace update
         catch (Exception e)
         {
           ClearWrite($"Failed to update {file}! ({e.Message})", ConsoleColor.DarkRed);
+
+          if (porcelain)
+            Environment.Exit(-101);
         }
       }
 
@@ -649,6 +701,10 @@ namespace update
       catch (Exception e)
       {
         ClearWrite($"Failed to remove file {path}. ({e.Message})", ConsoleColor.DarkRed);
+
+        if (porcelain)
+          Environment.Exit(-101);
+
         return false;
       }
     }
@@ -678,6 +734,9 @@ namespace update
       catch (Exception e)
       {
         ClearWrite($"Failed to create directory for {destinationPath}. ({e.Message})", ConsoleColor.DarkRed);
+
+        if (porcelain)
+          Environment.Exit(-101);
       }
 
       bool ret = DeleteFileIfExists(destinationPath);
@@ -690,6 +749,9 @@ namespace update
       {
         ClearWrite($"Failed to write file {sourcePath}. ({e.Message})", ConsoleColor.DarkRed);
         ret = false;
+
+        if (porcelain)
+          Environment.Exit(-101);
       }
 
       return ret;
